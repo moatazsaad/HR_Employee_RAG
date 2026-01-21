@@ -1,18 +1,18 @@
 # HR Employee RAG
 
-A Retrieval-Augmented Generation (RAG) system for HR employee insights using OpenAI and LangChain.
+A Retrieval-Augmented Generation (RAG) system for HR employee insights using OpenAI, LangChain, and Chroma.
 
 ## Overview
 
-This project converts HR employee data from a CSV file into individual Markdown files, creates embeddings with OpenAI, and stores them in a vector database for fast retrieval. Users can query the system via a conversational interface (Gradio or FastAPI) to get summaries or insights about employees.
+This project converts HR employee data from a CSV file into individual Markdown files, creates embeddings with OpenAI, and stores them in a Chroma vector database. Users can interact with the data via a conversational interface (Gradio) to get summaries or insights about employees.
 
 ## Features
 
 - Converts CSV employee data into structured Markdown documents.
-- Splits documents into chunks for better RAG performance.
-- Generates embeddings using OpenAI and stores them in a Chroma vector store.
-- Supports conversational queries about employees.
-- Optional deployment via Gradio or Vercel for web access.
+- Splits documents into chunks for optimal RAG performance.
+- Generates embeddings with OpenAI and stores them in a Chroma vector store.
+- Provides a conversational interface to query employee data.
+- Local Gradio interface with shareable link for easy access.
 
 ## Installation
 
@@ -27,7 +27,11 @@ cd HR_Employee_RAG
 
 ```bash
 python -m venv env
-source env/bin/activate   # On Windows: env\Scripts\activate
+# On Windows:
+env\Scripts\activate
+# On macOS/Linux:
+source env/bin/activate
+
 pip install -r requirements.txt
 ```
 
@@ -48,30 +52,13 @@ python hr_employee_rag.py
 * A Gradio chat interface will launch locally and provide a shareable link.
 * Example query: `"Give me a summary of employee 1"`
 
-## Deployment
-
-To deploy on Vercel:
-
-1. Create a `vercel.json` pointing to your FastAPI script (`hr_rag_api.py` or `instant.py`).
-2. Run:
-
-```bash
-vercel
-```
-
-3. Follow the prompts to link your GitHub repo and deploy.
-
 ## File Structure
 
 ```
 HR_Employee_RAG/
-├─ hr_employee_rag.py        # Main script for RAG pipeline
+├─ hr_employee_rag.py       # Main script for RAG pipeline and Gradio interface
 ├─ hr_data/
-│  └─ employees/            # Markdown files for each employee
-├─ requirements.txt
-├─ vercel.json               # Vercel deployment config
+│  └─ employees/           # Markdown files for each employee
+├─ requirements.txt        # Project dependencies
 └─ README.md
-```
-
-I can also write a **shorter, Vercel-focused version** if you want it optimized for deployment instructions. Do you want me to do that?
 ```
