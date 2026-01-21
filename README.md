@@ -1,6 +1,3 @@
-Here’s a clear and concise `README.md` in Markdown for your HR Employee RAG project:
-
-````markdown
 # HR Employee RAG
 
 A Retrieval-Augmented Generation (RAG) system for HR employee insights using OpenAI and LangChain.
