@@ -3,12 +3,12 @@ import os
 import glob
 import pandas as pd
 from dotenv import load_dotenv
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.schema import Document
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 import numpy as np
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
@@ -84,8 +84,8 @@ conversation_chain = ConversationalRetrievalChain.from_llm(
 
 # Example query
 query = "Give me a summary of employee 1"
-result = conversation_chain.invoke({"question": query})
-print(result["answer"])
+answer = conversation_chain.run("Give me a summary of employee 1")
+print(answer)
 
 # Gradio interface 
 def chat(message, history):

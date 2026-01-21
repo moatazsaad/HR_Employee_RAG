@@ -1,0 +1,14 @@
+{
+    "builds": [
+        {
+            "src": "hr_rag_api.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "hr_rag_api.py"
+        }
+    ]
+}
