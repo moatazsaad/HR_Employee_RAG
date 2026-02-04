@@ -4,14 +4,11 @@ import glob
 import pandas as pd
 from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.schema import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
-from langchain_community.vectorstores import FAISS
-import numpy as np
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_classic.chains import ConversationalRetrievalChain,RetrievalQAWithSourcesChain
 import gradio as gr
 
 # Load environment variables and set OpenAI API key
@@ -59,7 +56,7 @@ for folder in folders:
 print(f"Loaded {len(documents)} documents.")
 
 # Split documents into chunks 
-text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
 chunks = text_splitter.split_documents(documents)
 print(f"Created {len(chunks)} chunks from employee documents.")
 
@@ -74,22 +71,77 @@ vectorstore = Chroma.from_documents(chunks, embedding=embeddings, persist_direct
 print(f"Vectorstore created with {vectorstore._collection.count()} documents.")
 
 # Conversational RAG setup 
-llm = ChatOpenAI(temperature=0.7, model_name=MODEL)
+llm_chat = ChatOpenAI(temperature=0.7, model_name=MODEL)
 memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 retriever = vectorstore.as_retriever()
 
+# Chat chain (memory)
 conversation_chain = ConversationalRetrievalChain.from_llm(
-    llm=llm, retriever=retriever, memory=memory
+    llm=llm_chat, retriever=retriever, memory=memory
 )
 
-# Example query
-query = "Give me a summary of employee 1"
-answer = conversation_chain.run("Give me a summary of employee 1")
-print(answer)
+# LLM for evaluation (accurate)
+llm_eval = ChatOpenAI(temperature=0, model_name=MODEL)
+
+# QA chain (sources)
+qa_chain = RetrievalQAWithSourcesChain.from_chain_type(
+    llm=llm_eval,
+    chain_type="stuff",
+    retriever=retriever,
+    return_source_documents=True
+)
 
 # Gradio interface 
-def chat(message, history):
-    result = conversation_chain.invoke({"question": message})
-    return result["answer"]
+def chat(message, mode):
+    if mode == "eval":
+        # QA chain with sources
+        result = qa_chain.invoke({"question": message})
+        sources = result.get("source_documents", [])
+        if sources:
+            sources_str = "\n".join([doc.metadata.get("source", str(doc)) for doc in sources])
+            return {"answer": result['answer'], "sources": sources_str}
+        return {"answer": result["answer"], "sources": ""}
+    else:
+        # Normal conversation chain
+        result = conversation_chain.invoke({"question": message})
+        return result["answer"]
 
-gr.ChatInterface(chat, type="messages").launch(share=True)
+# Gradio Blocks
+with gr.Blocks() as demo:
+    gr.Markdown("## HR Chatbot")
+    
+    # Mode dropdown
+    mode_dropdown = gr.Dropdown(choices=["chat", "eval"], value="chat", label="Mode")
+    
+    # Chatbot display
+    chatbox = gr.Chatbot(value=[])
+    
+    # User input textbox
+    message_input = gr.Textbox(placeholder="Ask something...", label="Your message")
+    
+    # Submit function
+    def submit(message, mode, chat_history):
+        response = chat(message, mode)
+
+        # Ensure messages are dictionaries with role & content
+        if isinstance(response, dict):
+            answer = response.get("answer")
+            sources = response.get("sources", "")
+            if sources:
+                answer_text = f"{answer}\n\nSources:\n{sources}"
+            else:
+                answer_text = answer
+        else:
+            answer_text = response
+
+        chat_history.append({"role": "user", "content": message})
+        chat_history.append({"role": "assistant", "content": answer_text})
+
+        return "", chat_history
+
+
+    # Link textbox submit to function
+    message_input.submit(submit, [message_input, mode_dropdown, chatbox], [message_input, chatbox])
+
+# Launch the Gradio app
+demo.launch(share=True)
